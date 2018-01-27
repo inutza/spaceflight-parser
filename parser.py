@@ -50,6 +50,9 @@ def parser():
         date_start_idx = date_idx + len(DATETAG)
         date_end_idx = the_page[date_start_idx:block_end].find(SPANENDTAG) + date_start_idx
         date = the_page[date_start_idx:date_end_idx]
+        if '/' in date:
+            _idx = date.find('/')
+            date=date[:_idx]
 
         found_month = False
         mth_idx = 0
