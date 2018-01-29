@@ -52,7 +52,7 @@ def parser():
         date = the_page[date_start_idx:date_end_idx]
         if '/' in date:
             _idx = date.find('/')
-            date=date[:_idx]
+            date=date[_idx+1:]
 
         found_month = False
         mth_idx = 0
