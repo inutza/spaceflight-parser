@@ -75,16 +75,14 @@ def parser():
         if found_month and day != '':
             event = Event()
             # Check if day has '/' in it
-            if '/' in day:
-                _idx = day.find('/')
+            year = d.year
+            _idx = day.find('/')
+            if _idx != -1:
                 day = day[_idx+1:]
-            ev_date = datetime(d.year, d.month, d.day, d.hour, d.minute, 0, 0, tzinfo=pytz.utc)
+
             mth = mth_idx + 1
             if mth < d.month:
-                # It's next year (pray it holds -- worst case scenario it fixes itself in Jan?)
-                ev_date = ev_date.replace(year = ev_date.year + 1)
-            ev_date = ev_date.replace(day = int(day))
-            ev_date = ev_date.replace(month = mth)
+                year += 1
 
             # Get event title
             mission_start_idx = the_page[date_end_idx:block_end].find(MISSIONTAG) + len(MISSIONTAG) + date_end_idx
@@ -110,13 +108,11 @@ def parser():
             # Parse launch window
             if '-' in launch_win:
                 # I have a launch window!
-                ev_date = ev_date.replace(hour = int(launch_win[:2]))
-                ev_date = ev_date.replace(minute = int(launch_win[2:4]))
-                ev_date_end = ev_date.replace(hour = int(launch_win[5:7]))
-                ev_date_end = ev_date_end.replace(minute = int(launch_win[7:]))
+                ev_date = datetime(year, mth, int(day), int(launch_win[:2]), int(launch_win[2:4]), 0, 0, tzinfo=pytz.utc)
+                ev_date_end = datetime(year, mth, int(day), int(launch_win[5:7]), int(launch_win[2:4]), 0, 0, tzinfo=pytz.utc)
             else:
                 ev_date = ev_date.replace(hour = int(launch_win[:2]))
-                ev_date = ev_date.replace(minute = int(launch_win[2:]))
+                ev_date = datetime(year, mth, int(day), int(launch_win[:2]), int(launch_win[2:4]), 0, 0, tzinfo=pytz.utc)
                 ev_date_end = ev_date + timedelta(hours=1)
             event.add('dtstart', ev_date)
             event.add('dtend', ev_date_end)
