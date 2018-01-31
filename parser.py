@@ -24,20 +24,20 @@ FL_MTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'Augus
 
 
 def parser():
-    
+
     req = urllib2.Request('https://spaceflightnow.com/launch-schedule/')
     response = urllib2.urlopen(req)
     the_page = response.read()
-   
+
     d = datetime.utcnow()
     h = HTMLParser()
     cal = Calendar()
     cal.add('version', 2.0)
     cal.add('prodid', '-//madkat//SpaceX feed//EN')
-    
+
     # Get all DATETAG indexes
     date_group = [m.start() for m in re.finditer(DATETAG, the_page)]
-    
+
     # For each date index in date_group, extract the other data
     for _idx in range(len(date_group)):
 
@@ -46,7 +46,7 @@ def parser():
             block_end = len(the_page)
         else:
             block_end = date_group[_idx + 1]
-            
+
         date_start_idx = date_idx + len(DATETAG)
         date_end_idx = the_page[date_start_idx:block_end].find(SPANENDTAG) + date_start_idx
         date = the_page[date_start_idx:date_end_idx]
@@ -56,7 +56,7 @@ def parser():
 
         found_month = False
         mth_idx = 0
-        
+
         while not found_month and mth_idx < 12:
             if SH_MTH[mth_idx] in date:
                 _idx = date.find(SH_MTH[mth_idx])
@@ -83,9 +83,9 @@ def parser():
             if mth < d.month:
                 # It's next year (pray it holds -- worst case scenario it fixes itself in Jan?)
                 ev_date = ev_date.replace(year = ev_date.year + 1)
-            ev_date = ev_date.replace(month = mth)
             ev_date = ev_date.replace(day = int(day))
-        
+            ev_date = ev_date.replace(month = mth)
+
             # Get event title
             mission_start_idx = the_page[date_end_idx:block_end].find(MISSIONTAG) + len(MISSIONTAG) + date_end_idx
             mission_end_idx = the_page[mission_start_idx:block_end].find(SPANENDTAG) + mission_start_idx
@@ -95,7 +95,7 @@ def parser():
             mission = mission.decode("ascii", errors="ignore").encode()
             # Escape HTML characters & add summary
             event.add('summary', h.unescape(mission))
-        
+
             # Get launch window
             launch_win_start_idx = the_page[mission_end_idx:block_end].find(LAUNCHWINDOWTAG) + len(LAUNCHWINDOWTAG) + mission_end_idx
             launch_win_end_idx = the_page[launch_win_start_idx:block_end].find(SPANSTARTTAG) + launch_win_start_idx
@@ -106,7 +106,7 @@ def parser():
                 launch_win = "0000-2359"
             else:
                 launch_win = re.search(LAUNCHREGEX, launch_win_raw[:is_gmt_idx]).group(0)
-            
+
             # Parse launch window
             if '-' in launch_win:
                 # I have a launch window!
@@ -118,16 +118,15 @@ def parser():
                 ev_date = ev_date.replace(hour = int(launch_win[:2]))
                 ev_date = ev_date.replace(minute = int(launch_win[2:]))
                 ev_date_end = ev_date + timedelta(hours=1)
-
             event.add('dtstart', ev_date)
             event.add('dtend', ev_date_end)
-            
+
             # Get event location
             loc_start_idx = the_page[launch_win_end_idx:block_end].find(LOCTAG) + len(LOCTAG) + launch_win_end_idx
             loc_end_idx = the_page[loc_start_idx:block_end].find(DIVENDTAG) + loc_start_idx
             location = the_page[loc_start_idx:loc_end_idx]
             event.add('location', location)
-            
+
             # Get event description
             desc_start_idx = the_page[launch_win_end_idx:block_end].find(DESCTAG)  + launch_win_end_idx + len(DESCTAG)
             desc_end_idx = the_page[desc_start_idx:block_end].find(UPDATETAG) + desc_start_idx
@@ -137,13 +136,13 @@ def parser():
             if launch_win == "0000-2359":
                 desc_filtered = "Launch window currently unavailable. Please check at a later time. " + desc_filtered
             event.add('description', desc_filtered)
-            
+
             # Add event to calendar
             cal.add_component(event)
-        
+
     # Return calendar
     return cal.to_ical()
-    
+
 
 if __name__ == '__main__':
     print parser()
